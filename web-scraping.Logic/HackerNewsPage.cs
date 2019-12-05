@@ -18,19 +18,20 @@ namespace web_scraping.Logic
             ParseErrors = new List<string>();
         }
         
-        public void IngestPage(HtmlDocument document)
+        public virtual bool IngestPage(HtmlDocument document)
         {
+            var errors = false;
             try
             {
                 var tableNode = document.DocumentNode.SelectNodes("//table[@class='itemlist']").First();
                 if (tableNode == null)
                 {
                     this.LogInfo("Missing news data.");
-                    return;
+                    errors = true;
                 }
                 
                 var trNodes = tableNode.SelectNodes(".//tr");
-                const bool validEntry = true; // We'll add the entries even if some values are empty
+                const bool validEntry = true; // Adding entry with failed parsing
                 
                 for (var i = 0; i <= 87; i += 3) // 30 items to a news page
                 {
@@ -57,16 +58,19 @@ namespace web_scraping.Logic
             catch (Exception ex)
             {
                 this.LogInfo("General exception occurred during parsing: " + ex.Message);
+                errors = true;
             }
+
+            return errors;
         }
 
-        public string DeserializedWebScrapes(int count)
+        public virtual string DeserializedWebScrapes(int count)
         {
             return JsonConvert.SerializeObject(_newsItems.GetRange(0, count), Formatting.Indented);
         }
         
         #region Extraction methods...
-        public NewsItem ExtractComments(HtmlNodeCollection trNodes, int i, NewsItem newsItem)
+        public virtual NewsItem ExtractComments(HtmlNodeCollection trNodes, int i, NewsItem newsItem)
         {
             var commentsString = (string) null;
             try
@@ -84,7 +88,7 @@ namespace web_scraping.Logic
             return newsItem;
         }
 
-        public NewsItem ExtractAuthor(HtmlNodeCollection trNodes, int i, NewsItem newsItem)
+        public virtual NewsItem ExtractAuthor(HtmlNodeCollection trNodes, int i, NewsItem newsItem)
         {
             var authorString = (string) null;
             try
@@ -106,7 +110,7 @@ namespace web_scraping.Logic
             return newsItem;
         }
 
-        public NewsItem ExtractPoints(HtmlNodeCollection trNodes, int i, NewsItem newsItem)
+        public virtual NewsItem ExtractPoints(HtmlNodeCollection trNodes, int i, NewsItem newsItem)
         {
             var pointsString = (string) null;
             try
@@ -124,7 +128,7 @@ namespace web_scraping.Logic
             return newsItem;
         }
 
-        public NewsItem ExtractTitle(HtmlNodeCollection trNodes, int i, NewsItem newsItem)
+        public virtual NewsItem ExtractTitle(HtmlNodeCollection trNodes, int i, NewsItem newsItem)
         {
             var title = (string) null;
             try
@@ -147,7 +151,7 @@ namespace web_scraping.Logic
             return newsItem;
         }
 
-        public NewsItem ExtractUrl(HtmlNodeCollection trNodes, int i, NewsItem newsItem)
+        public virtual NewsItem ExtractUrl(HtmlNodeCollection trNodes, int i, NewsItem newsItem)
         {
             var url = (string) null;
             try
@@ -171,7 +175,7 @@ namespace web_scraping.Logic
             return newsItem;
         }
 
-        public NewsItem ExtractRank(HtmlNodeCollection trNodes, int i, NewsItem newsItem)
+        public virtual NewsItem ExtractRank(HtmlNodeCollection trNodes, int i, NewsItem newsItem)
         {
             var rankString = (string)null;
             try

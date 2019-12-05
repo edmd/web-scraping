@@ -1,36 +1,63 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using HtmlAgilityPack;
+using Microsoft.Extensions.Caching.Memory;
 
 namespace web_scraping.Logic
 {
-    // TODO: Implement Singleton pattern on this class and wrap the '_page' variable in MemCache,
-    // TODO: populate only if cache expired
-    public class HackerNewsWebsite
+    public sealed class HackerNewsWebsite
     {
-        private readonly IPage _page;
-        private readonly List<string> _importUrls;
+        private  IPage _page;
+        private static HackerNewsWebsite instance;
+        MemoryCache cache = new MemoryCache(new MemoryCacheOptions());
 
-        public HackerNewsWebsite()
+        static HackerNewsWebsite() { }
+
+        private HackerNewsWebsite() { }
+
+        public static HackerNewsWebsite Instance
         {
-            // Load up all the news items in the 'Data' layer, filter on the 'UI'
-            _page = new HackerNewsPage();
-            _importUrls = new List<string>
+            get
             {
-                "https://news.ycombinator.com/news?p=1",
-                "https://news.ycombinator.com/news?p=2",
-                "https://news.ycombinator.com/news?p=3",
-                "https://news.ycombinator.com/news?p=4"
-            };
+                if (instance == null)
+                {
+                    instance = new HackerNewsWebsite();
+                }
+                return instance;
+            }
         }
         
         public void ImportSite()
         {
-            foreach (var importUrl in _importUrls)
+            if (cache.TryGetValue("HackerNewsPage", out IPage page))
             {
-                var web = new HtmlWeb();
-                var htmlDoc = web.Load(importUrl);
+                _page = page;
+            }
+            else
+            {
+                _page = new HackerNewsPage();
+
+                // Load up all the news items in the 'Data' layer, filter on the 'UI'
+                var importUrls = new List<string>
+                {
+                    "https://news.ycombinator.com/news?p=1",
+                    "https://news.ycombinator.com/news?p=2",
+                    "https://news.ycombinator.com/news?p=3",
+                    "https://news.ycombinator.com/news?p=4"
+                };
+
+                foreach (var importUrl in importUrls)
+                {
+                    var web = new HtmlWeb();
+                    var htmlDoc = web.Load(importUrl);
+
+                    _page.IngestPage(htmlDoc);
+                }
                 
-                _page.IngestPage(htmlDoc);
+                var entry = cache.CreateEntry("HackerNewsPage");
+                entry.AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(20);
+                entry.SetValue(_page);
+                entry.Dispose();
             }
         }
 

@@ -18,7 +18,7 @@ namespace web_scraping
             var feedCount = Input.ReadInt("Enter the number of posts to extract: ", 1, 100);
             Output.WriteLine($"Outputting {feedCount} post(s) from Hacker News website (https://news.ycombinator.com/news)");
 
-            var website = new HackerNewsWebsite();
+            var website = HackerNewsWebsite.Instance;
             website.ImportSite();
 
             var newsString = website.ReturnNewsItems(feedCount);
